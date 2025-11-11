@@ -1,0 +1,304 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "d78ecf1c",
+   "metadata": {
+    "collapsed": true,
+    "id": "d78ecf1c",
+    "outputId": "09f7fbad-a61b-419d-810b-e5e8dc5b1fea"
+   },
+   "outputs": [
+    {
+     "ename": "",
+     "evalue": "",
+     "output_type": "error",
+     "traceback": [
+      "\u001b[1;31mThe kernel failed to start as a dll could not be loaded.\n",
+      "\u001b[1;31mClick <a href='https://aka.ms/kernelFailuresDllLoad'>here</a> for more info."
+     ]
+    }
+   ],
+   "source": [
+    "%pip install numpy\n",
+    "%pip install time\n",
+    "%pip install pillow as PILL\n",
+    "%pip install pandas\n",
+    "%pip install sqlite3\n",
+    "%pip install openpyxl\n",
+    "%pip install matplotlib\n",
+    "%pip install tensorflow\n",
+    "%pip install scikit-learn\n",
+    "%pip install keras\n",
+    "%pip install scipy\n",
+    "import matplotlib.pyplot as plt\n",
+    "import pandas as pd\n",
+    "import time\n",
+    "import shutil\n",
+    "import openpyxl\n",
+    "import os as os\n",
+    "import shutil\n",
+    "import sqlite3 as sql\n",
+    "import numpy as np\n",
+    "from os import listdir\n",
+    "from os.path import isfile, join\n",
+    "from PIL import Image\n",
+    "from sklearn.metrics.pairwise import cosine_similarity\n",
+    "from tensorflow.keras.preprocessing import image\n",
+    "from tensorflow.keras.applications.mobilenet_v2 import MobileNetV2, preprocess_input\n",
+    "from tensorflow.keras.models import Model\n",
+    "from tensorflow.keras.utils import img_to_array\n",
+    "\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "c5064542",
+   "metadata": {
+    "collapsed": true,
+    "id": "c5064542",
+    "outputId": "319a902c-189a-4f87-b654-f555977b72f0"
+   },
+   "outputs": [],
+   "source": [
+    "ruta_base = \"PROYECTON\"\n",
+    "\n",
+    "for carpeta in os.listdir(ruta_base):\n",
+    "    ruta_carpeta = os.path.join(ruta_base, carpeta)\n",
+    "\n",
+    "    if os.path.isdir(ruta_carpeta):\n",
+    "        print(f\"\\nMostrando imágenes de la carpeta: {carpeta}\\n\")\n",
+    "\n",
+    "        for nombre_imagen in os.listdir(ruta_carpeta):\n",
+    "            ruta_imagen = os.path.join(ruta_carpeta, nombre_imagen)\n",
+    "\n",
+    "            if os.path.isfile(ruta_imagen) and nombre_imagen.lower().endswith(('.png', '.jpg', '.jpeg')):\n",
+    "                try:\n",
+    "                    imagen = Image.open(ruta_imagen).convert('L')\n",
+    "                    imagen.save(ruta_imagen)\n",
+    "                    imagen = imagen.resize((80, 80))    \n",
+    "                    plt.imshow(imagen, cmap='gray')\n",
+    "                    plt.axis(\"off\")\n",
+    "                    plt.show()\n",
+    "                except Exception as error:\n",
+    "                    print(f\"No se pudo abrir {nombre_imagen}: {error}\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "f3800626",
+   "metadata": {
+    "collapsed": true,
+    "id": "f3800626",
+    "outputId": "96732f65-b17b-40ed-85eb-3dea98048066"
+   },
+   "outputs": [],
+   "source": [
+    "for nombre_imagen in os.listdir(ruta_carpeta):\n",
+    "    ruta_imagen = os.path.join(ruta_carpeta, nombre_imagen)\n",
+    "    imagen = Image.open(ruta_imagen)\n",
+    "    imagen_array = np.array(imagen)\n",
+    "    print(imagen_array)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "7a53adcb",
+   "metadata": {
+    "collapsed": true,
+    "id": "7a53adcb",
+    "outputId": "cca97259-da26-4d20-d53e-fdcc9066b709"
+   },
+   "outputs": [],
+   "source": [
+    "vectores_planos = []\n",
+    "\n",
+    "for img_array in imagen_array:\n",
+    "    vector_plano = img_array.flatten()\n",
+    "    vectores_planos.append(vector_plano)\n",
+    "    print(img_array.flatten())\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "0eb4df75",
+   "metadata": {
+    "collapsed": true,
+    "id": "0eb4df75",
+    "outputId": "76a8ed9e-8ebb-413b-94ab-ef55ff96787f"
+   },
+   "outputs": [],
+   "source": [
+    "vector_plano_total = np.vstack(vectores_planos)\n",
+    "print(vector_plano_total)\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "d43d8f56",
+   "metadata": {
+    "id": "d43d8f56",
+    "outputId": "c4f4cc9c-9dfc-40ec-ba45-80a6fa80d949"
+   },
+   "outputs": [],
+   "source": [
+    "conection = sql.connect(\"Recomiendalimentos.db\")\n",
+    "\n",
+    "conection.execute(\"PRAGMA foreing_keys = ON\")\n",
+    "\n",
+    "\n",
+    "cursor = conection.cursor()\n",
+    "\n",
+    "cursor.execute(\"\"\"\n",
+    "CREATE TABLE IF NOT EXISTS alimentos\n",
+    "               (id INTEGER PRIMARY KEY AUTOINCREMENT,\n",
+    "               ubicación TEX NOT NULL UNIQUE,\n",
+    "               sub_ubicación TEX NOT NULL,\n",
+    "               alimento TEX NOT NULL);\n",
+    "\"\"\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "276b9e5c",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "ruta_base = \"PROYECTON\"\n",
+    "\n",
+    "datos = []\n",
+    "\n",
+    "for subcarpeta in os.listdir(ruta_base):\n",
+    "    ruta_sub = os.path.join(ruta_base, subcarpeta)\n",
+    "    \n",
+    "    if os.path.isdir(ruta_sub):\n",
+    "        for archivo in os.listdir(ruta_sub):\n",
+    "            if archivo.lower().endswith(('.jpg', '.jpeg', '.png')):\n",
+    "                datos.append({\n",
+    "                    'ubicacion': os.path.basename(ruta_base),\n",
+    "                    'sub_ubicacion': subcarpeta,\n",
+    "                    'alimento': archivo\n",
+    "                })\n",
+    "\n",
+    "df = pd.DataFrame(datos)\n",
+    "\n",
+    "print(\"Base de datos generada con todas las imágenes:\")\n",
+    "print(df.head())\n",
+    "\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "61318477",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "ruta_base = \"PROYECTON\"\n",
+    "ruta_nuevos = os.path.join(ruta_base, \"nue_alim\")\n",
+    "img_size = (70, 70)\n",
+    "\n",
+    "# === CARGA DE IMÁGENES ENTRENADAS (Fruver y Mercado) ===\n",
+    "X = []\n",
+    "y = []\n",
+    "\n",
+    "for subcarpeta in os.listdir(ruta_base):\n",
+    "    ruta_sub = os.path.join(ruta_base, subcarpeta)\n",
+    "    if os.path.isdir(ruta_sub) and subcarpeta != \"nue_alim\":\n",
+    "        for archivo in os.listdir(ruta_sub):\n",
+    "            if archivo.lower().endswith(('.jpg', '.jpeg', '.png')):\n",
+    "                ruta_img = os.path.join(ruta_sub, archivo)\n",
+    "                try:\n",
+    "                    img = Image.open(ruta_img).convert('L').resize(img_size)\n",
+    "                    X.append(np.array(img).flatten())\n",
+    "                    y.append(subcarpeta)\n",
+    "                except Exception as e:\n",
+    "                    print(f\"Error con {archivo}: {e}\")\n",
+    "\n",
+    "X = np.array(X)\n",
+    "y = np.array(y)\n",
+    "\n",
+    "print(f\" Imágenes cargadas: {len(X)}\")\n",
+    "print(f\" Clases detectadas: {set(y)}\")\n",
+    "\n",
+    "# === MODELO BASE ===\n",
+    "modelo = {\"imagenes\": X, \"etiquetas\": y}\n",
+    "\n",
+    "\n",
+    "# === FUNCIÓN PARA CLASIFICAR UNA IMAGEN NUEVA ===\n",
+    "def clasificar_imagen(ruta_img, modelo, img_size=(70, 70)):\n",
+    "    try:\n",
+    "        img = Image.open(ruta_img).convert('L').resize(img_size)\n",
+    "        vec = np.array(img).flatten()\n",
+    "    except:\n",
+    "        print(f\"No se pudo abrir la imagen: {ruta_img}\")\n",
+    "        return None\n",
+    "\n",
+    "    # Calcula distancia entre la imagen nueva y cada imagen del modelo\n",
+    "    distancias = np.linalg.norm(modelo[\"imagenes\"] - vec, axis=1)\n",
+    "    indice_min = np.argmin(distancias)\n",
+    "    clase_predicha = modelo[\"etiquetas\"][indice_min]\n",
+    "    return clase_predicha\n",
+    "\n",
+    "\n",
+    "# === CLASIFICAR Y MOVER NUEVAS IMÁGENES ===\n",
+    "if not os.path.exists(ruta_nuevos):\n",
+    "    print(\" No existe la carpeta 'nue_alim'\")\n",
+    "else:\n",
+    "    for archivo in os.listdir(ruta_nuevos):\n",
+    "        if archivo.lower().endswith(('.jpg', '.jpeg', '.png')):\n",
+    "            ruta_img = os.path.join(ruta_nuevos, archivo)\n",
+    "            clase = clasificar_imagen(ruta_img, modelo)\n",
+    "\n",
+    "            if clase:\n",
+    "                destino = os.path.join(ruta_base, clase, archivo)\n",
+    "                try:\n",
+    "                    shutil.move(ruta_img, destino)\n",
+    "                    print(f\"{archivo} movida a carpeta '{clase}'\")\n",
+    "                except Exception as e:\n",
+    "                    print(f\" Error al mover {archivo}: {e}\")\n",
+    "\n",
+    "    print(\"\\n Clasificación y movimiento completados.\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "1e6aa01f",
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "colab": {
+   "provenance": []
+  },
+  "kernelspec": {
+   "display_name": "base",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.12.4"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
