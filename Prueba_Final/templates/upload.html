@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row">
+  <div class="col-lg-8">
+    <div class="card mb-4 shadow-sm">
+      <div class="card-body">
+        <h4 class="card-title">Subir fotos</h4>
+        <p class="text-muted">{{ mensaje }}</p>
+
+        <form method="post" enctype="multipart/form-data">
+          <div class="mb-3">
+            <label class="form-label">Selecciona una o varias imágenes</label>
+            <input type="file" name="photos" accept="image/*" multiple class="form-control">
+          </div>
+          <div class="d-flex gap-2">
+            <button class="btn btn-success" type="submit">Subir</button>
+            <a href="{{ url_for('logout') }}" class="btn btn-outline-secondary">Cerrar sesión</a>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="card shadow-sm mb-3">
+      <div class="card-body">
+        <h5 class="mb-3">Imágenes subidas</h5>
+        {% if files %}
+          <div class="row g-2">
+            {% for f in files %}
+            <div class="col-6 col-md-3">
+              <div class="card">
+                <a href="{{ url_for('uploaded_file', filename=f) }}" target="_blank">
+                  <img src="{{ url_for('uploaded_file', filename=f) }}" class="img-fluid rounded-top" style="height:120px; object-fit:cover;">
+                </a>
+                <div class="card-body py-1 px-2 small text-truncate">{{ f }}</div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="text-muted">Aún no hay imágenes subidas.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card shadow-sm mb-3">
+      <div class="card-body">
+        <h6>Clasificación detectada</h6>
+        {% if classified %}
+          <ul class="list-group list-group-flush">
+            {% for fname, labels in classified.items() %}
+              <li class="list-group-item">
+                <div class="fw-semibold">{{ fname }}</div>
+                <div class="small text-muted">Etiquetas: {{ labels|join(', ') }}</div>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="small text-muted">No hay imágenes clasificadas aún.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h6>Recetas sugeridas</h6>
+        {% if suggestions %}
+          <ul class="list-unstyled">
+            {% for s in suggestions %}
+              <li class="mb-3">
+                <div class="fw-semibold small">Coincidencias: {{ s.matches|join(', ') }}</div>
+                <div class="small">{{ s.recipe }}</div>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="small text-muted">Sube imágenes para obtener recetas sugeridas.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
