@@ -1,0 +1,7 @@
+body {
+  background: linear-gradient(180deg, #f6f9fc 0%, #ffffff 100%);
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+}
+
+.navbar-brand { color: #2c3e50 !important; font-size: 1.25rem; }
+.card { border-radius: 12px; }
